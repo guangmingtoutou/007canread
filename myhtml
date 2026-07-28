@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>📞 电话监控 · 团队版</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js">
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            color: #1e293b;
+            padding: 20px;
+        }
+        .app {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .header {
+            background: #fff;
+            border-radius: 16px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header h1 small {
+            font-size: 13px;
+            font-weight: 400;
+            color: #64748b;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
+        .controls label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .controls select,
+        .controls input {
+            padding: 5px 10px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            background: #fff;
+            outline: none;
+            transition: 0.2s;
+        }
+        .controls select:focus,
+        .controls input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+        .controls input[type="time"] {
+            width: 110px;
+        }
+        .btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            background: #3b82f6;
+            color: #fff;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn:hover {
+            background: #2563eb;
+        }
+        .btn-outline {
+            background: transparent;
+            color: #3b82f6;
+            border: 1.5px solid #3b82f6;
+        }
+        .btn-outline:hover {
+            background: #eff6ff;
+        }
+        .btn-reset {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+        .btn-reset:hover {
+            background: #e2e8f0;
+        }
+        .btn-success {
+            background: #22c55e;
+        }
+        .btn-success:hover {
+            background: #16a34a;
+        }
+        .btn-danger {
+            background: #ef4444;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        .btn-sm {
+            padding: 4px 12px;
+            font-size: 12px;
+        }
+        .upload-area {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .upload-area input[type="file"] {
+            display: none;
+        }
+        .file-label {
+            cursor: pointer;
+            padding: 6px 14px;
+            border: 1.5px dashed #94a3b8;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #475569;
+            transition: 0.2s;
+            background: #fafcff;
+        }
+        .file-label:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        .data-status {
+            font-size: 12px;
+            color: #64748b;
+            padding: 4px 12px;
+            background: #f1f5f9;
+            border-radius: 20px;
+        }
+        .data-status .loaded {
+            color: #16a34a;
+            font-weight: 500;
+        }
+        .data-status .empty {
+            color: #94a3b8;
+        }
+
+        .summary-section {
+            background: #fff;
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        .summary-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .summary-table th {
+            background: #f1f5f9;
+            padding: 8px 12px;
+            text-align: center;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .summary-table td {
+            padding: 8px 12px;
+            text-align: center;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .summary-table tr:hover td {
+            background: #fafcff;
+        }
+        .summary-table .num {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .group-card {
+            background: #fff;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+        .group-header {
+            padding: 12px 20px;
+            background: #f8fafc;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .group-header h2 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .group-header .sub {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 400;
+        }
+        .group-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .table-wrap {
+            overflow-x: auto;
+            padding: 0 4px 4px 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            min-width: 1300px;
+        }
+        table th {
+            background: #f1f5f9;
+            color: #475569;
+            font-weight: 600;
+            padding: 8px 6px;
+            text-align: center;
+            border-bottom: 2px solid #e2e8f0;
+            white-space: nowrap;
+            font-size: 12px;
+        }
+        table td {
+            padding: 6px 6px;
+            text-align: center;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        table tr:hover td {
+            background: #fafcff;
+        }
+        .planner-name {
+            font-weight: 500;
+            color: #0f172a;
+            text-align: left;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .planner-name .absent-check {
+            margin-right: 4px;
+        }
+        .planner-row-absent td {
+            opacity: 0.5;
+            background: #f8fafc;
+        }
+        .target-input {
+            width: 46px;
+            padding: 3px 4px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 12px;
+            text-align: center;
+            background: #fff;
+            outline: none;
+            transition: 0.2s;
+        }
+        .target-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+        .target-input:disabled {
+            background: #f1f5f9;
+            color: #94a3b8;
+        }
+        .diff {
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .diff-pos {
+            color: #16a34a;
+        }
+        .diff-neg {
+            color: #dc2626;
+        }
+        .diff-zero {
+            color: #94a3b8;
+        }
+        .stat-num {
+            font-weight: 500;
+        }
+        .stat-num.valid {
+            color: #2563eb;
+        }
+        .stat-num.total {
+            color: #7c3aed;
+        }
+        .col-phase {
+            background: #fffbeb;
+        }
+        .col-phase th {
+            background: #fef3c7;
+        }
+        .col-supplement {
+            background: #f0fdf4;
+        }
+        .col-supplement th {
+            background: #dcfce7;
+        }
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: #94a3b8;
+        }
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        .empty-state p {
+            font-size: 15px;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-size: 14px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-box {
+            background: #fff;
+            padding: 24px 28px;
+            border-radius: 16px;
+            width: 400px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+        .modal-box h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+        .modal-box input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            outline: none;
+        }
+        .modal-box input:focus {
+            border-color: #3b82f6;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .modal-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 12px 0;
+        }
+        .modal-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .modal-list li .del-btn {
+            color: #ef4444;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+        }
+        .modal-list li .del-btn:hover {
+            color: #dc2626;
+        }
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .controls {
+                flex-wrap: wrap;
+            }
+            table {
+                font-size: 11px;
+                min-width: 1000px;
+            }
+            table th,
+            table td {
+                padding: 4px 4px;
+            }
+            .target-input {
+                width: 38px;
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app" id="app">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                📞 电话监控仪表板
+                <small>团队版</small>
+            </h1>
+            <div class="controls">
+                <label>
+                    统计类型
+                    <select id="statsType">
+                        <option value="total">总通次</option>
+                        <option value="valid" selected>有效通次</option>
+                    </select>
+                </label>
+                <label>
+                    阶段时间
+                    <input type="time" id="phaseTime" value="17:00" step="60" />
+                </label>
+                <div class="upload-area">
+                    <label class="file-label" id="fileLabel">
+                        📂 上传电话数据
+                        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+                    </label>
+                    <button class="btn btn-reset" id="resetDataBtn">↺ 重置示例</button>
+                </div>
+                <span class="data-status" id="dataStatus">
+                    <span class="empty">未加载数据</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- 汇总区域 -->
+        <div id="summarySection"></div>
+
+        <!-- 各组卡片 -->
+        <div id="mainContent"></div>
+
+        <!-- 添加人员模态框 -->
+        <div class="modal-overlay" id="addModal">
+            <div class="modal-box">
+                <h4>➕ 添加新规划师</h4>
+                <input type="text" id="newPlannerName" placeholder="请输入姓名" />
+                <div class="modal-actions">
+                    <button class="btn btn-reset" onclick="closeAddModal()">取消</button>
+                    <button class="btn btn-success" onclick="confirmAddPlanner()">确认添加</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 删除人员模态框 -->
+        <div class="modal-overlay" id="deleteModal">
+            <div class="modal-box">
+                <h4>🗑️ 选择要删除的人员</h4>
+                <ul class="modal-list" id="deleteMemberList"></ul>
+                <div class="modal-actions">
+                    <button class="btn btn-reset" onclick="closeDeleteModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div class="toast" id="toast"></div>
+    </div>
+
+    <script>
+        // ================================================================
+        //  1. 固定人员名单
+        // ================================================================
+        const FIXED_GROUPS = {
+            "岳嘉豪": {
+                grade: "高三",
+                members: ["闫溪廖", "向富康", "冯鹏程", "杜晓娜", "熊勇", "吴博", "贺一鸣", "宋岩", "张利红", "田鸽", "张璐", "王鑫", "王盼",
+                    "蒲春珍", "高振飞"
+                ]
+            },
+            "谢小刚": {
+                grade: "高三",
+                members: ["宫江鹏", "高琦", "边可", "高佳楠", "王玺闰", "朱佳喜"]
+            },
+            "杨帅": {
+                grade: "高二",
+                members: ["韩青", "李婵", "李沛林", "王一涵", "赵雷", "李方博", "郗淳哲", "孟灵", "李静", "姜博", "王力飞", "肖子康"]
+            },
+            "白泽超": {
+                grade: "高二",
+                members: ["徐利园", "柳晨昂", "杨晓南", "刘晨", "赵嘉曦", "段臻"]
+            }
+        };
+
+        // 动态添加的成员 { leader: [name, ...] }
+        let dynamicMembers = {};
+        // 已删除的成员 { leader: [name, ...] }
+        let deletedMembers = {};
+        // 请假状态 { planner: true/false }
+        let absentStatus = {};
+
+        // 获取当前所有成员 (过滤已删除)
+        function getAllMembers() {
+            const result = {};
+            for (const [leader, info] of Object.entries(FIXED_GROUPS)) {
+                let members = info.members.slice();
+                if (dynamicMembers[leader]) {
+                    members = members.concat(dynamicMembers[leader]);
+                }
+                if (deletedMembers[leader]) {
+                    members = members.filter(name => !deletedMembers[leader].includes(name));
+                }
+                members = [...new Set(members)];
+                result[leader] = { grade: info.grade, members };
+            }
+            return result;
+        }
+
+        // ================================================================
+        //  2. 数据 & 状态
+        // ================================================================
+        // 初始无数据，所有实际数据为0
+        let currentRecords = [];
+
+        // 目标存储
+        let plannerTargets = {};
+        let plannerPhaseTargets = {};
+        let plannerSupplements = {};
+
+        // 默认目标 (通次30, 时长200; 阶段通次12, 时长90)
+        const DEFAULT_TARGET = { count: 30, duration: 200 };
+        const DEFAULT_PHASE_TARGET = { count: 12, duration: 90 };
+
+        function initTargetsForPlanner(name) {
+            if (!plannerTargets[name]) {
+                plannerTargets[name] = { count: DEFAULT_TARGET.count, duration: DEFAULT_TARGET.duration };
+            }
+            if (!plannerPhaseTargets[name]) {
+                plannerPhaseTargets[name] = { count: DEFAULT_PHASE_TARGET.count, duration: DEFAULT_PHASE_TARGET.duration };
+            }
+            if (!plannerSupplements[name]) {
+                plannerSupplements[name] = { count: 0, duration: 0 };
+            }
+            if (absentStatus[name] === undefined) {
+                absentStatus[name] = false;
+            }
+        }
+
+        function initAllTargets() {
+            const all = getAllMembers();
+            for (const [leader, info] of Object.entries(all)) {
+                for (const name of info.members) {
+                    initTargetsForPlanner(name);
+                }
+            }
+        }
+
+        // ================================================================
+        //  3. 计算函数 (补充数据影响阶段差)
+        // ================================================================
+        function calcStats(records, planner, type) {
+            const filtered = records.filter(r => r[0] === planner);
+            const total = filtered.length;
+            const totalSec = filtered.reduce((s, r) => s + r[1], 0);
+            const valid = filtered.filter(r => r[1] >= 180);
+            const validCount = valid.length;
+            const validSec = valid.reduce((s, r) => s + r[1], 0);
+            if (type === 'valid') {
+                return { count: validCount, duration: Math.round(validSec / 60) };
+            } else {
+                return { count: total, duration: Math.round(totalSec / 60) };
+            }
+        }
+
+        function calcPhaseStats(records, planner, phaseTime, type) {
+            const [phH, phM] = phaseTime.split(':').map(Number);
+            const filtered = records.filter(r => {
+                if (r[0] !== planner) return false;
+                const [h, m, s] = r[2].split(':').map(Number);
+                return h < phH || (h === phH && m < phM);
+            });
+            const total = filtered.length;
+            const totalSec = filtered.reduce((s, r) => s + r[1], 0);
+            const valid = filtered.filter(r => r[1] >= 180);
+            const validCount = valid.length;
+            const validSec = valid.reduce((s, r) => s + r[1], 0);
+            if (type === 'valid') {
+                return { count: validCount, duration: Math.round(validSec / 60) };
+            } else {
+                return { count: total, duration: Math.round(totalSec / 60) };
+            }
+        }
+
+        // ================================================================
+        //  4. 渲染
+        // ================================================================
+        let statsType = 'valid';
+        let phaseTime = '17:00';
+
+        const mainEl = document.getElementById('mainContent');
+        const summaryEl = document.getElementById('summarySection');
+        const toastEl = document.getElementById('toast');
+
+        function showToast(msg, duration = 2500) {
+            toastEl.textContent = msg;
+            toastEl.classList.add('show');
+            clearTimeout(toastEl._timer);
+            toastEl._timer = setTimeout(() => toastEl.classList.remove('show'), duration);
+        }
+
+        function updateDataStatus() {
+            const count = currentRecords.length;
+            const el = document.getElementById('dataStatus');
+            if (count > 0) {
+                el.innerHTML = `<span class="loaded">✅ 已加载 ${count} 条通话记录</span>`;
+            } else {
+                el.innerHTML = `<span class="empty">⚠️ 暂无数据，请上传电话数据</span>`;
+            }
+        }
+
+        // 更新目标（供onchange调用）
+        window.updateTarget = function(el, type) {
+            const planner = el.dataset.planner;
+            const key = el.dataset.key;
+            const val = parseFloat(el.value);
+            if (isNaN(val) || val < 0) return;
+            if (type === 'main') {
+                if (!plannerTargets[planner]) plannerTargets[planner] = { count: DEFAULT_TARGET.count,
+                duration: DEFAULT_TARGET.duration };
+                plannerTargets[planner][key] = val;
+            } else if (type === 'phase') {
+                if (!plannerPhaseTargets[planner]) plannerPhaseTargets[planner] = { count: DEFAULT_PHASE_TARGET.count,
+                    duration: DEFAULT_PHASE_TARGET.duration };
+                plannerPhaseTargets[planner][key] = val;
+            } else if (type === 'supplement') {
+                if (!plannerSupplements[planner]) plannerSupplements[planner] = { count: 0, duration: 0 };
+                plannerSupplements[planner][key] = val;
+            }
+            render();
+        };
+
+        // 请假切换
+        window.toggleAbsent = function(planner, checkbox) {
+            absentStatus[planner] = checkbox.checked;
+            render();
+        };
+
+        // 删除人员（从组中移除）
+        window.deletePlanner = function(leader, name) {
+            if (!confirm(`确认删除 "${name}" ？`)) return;
+            if (!deletedMembers[leader]) deletedMembers[leader] = [];
+            if (!deletedMembers[leader].includes(name)) {
+                deletedMembers[leader].push(name);
+            }
+            if (dynamicMembers[leader]) {
+                dynamicMembers[leader] = dynamicMembers[leader].filter(n => n !== name);
+            }
+            delete absentStatus[name];
+            render();
+            showToast(`已删除 "${name}"`);
+        };
+
+        // 添加人员模态框
+        let currentLeaderForAdd = null;
+
+        function openAddModal(leader) {
+            currentLeaderForAdd = leader;
+            document.getElementById('addModal').classList.add('active');
+            document.getElementById('newPlannerName').value = '';
+            document.getElementById('newPlannerName').focus();
+        }
+
+        window.closeAddModal = function() {
+            document.getElementById('addModal').classList.remove('active');
+            currentLeaderForAdd = null;
+        };
+
+        window.confirmAddPlanner = function() {
+            const name = document.getElementById('newPlannerName').value.trim();
+            if (!name) {
+                showToast('请输入姓名', 1500);
+                return;
+            }
+            if (!currentLeaderForAdd) return;
+            const all = getAllMembers();
+            for (const [leader, info] of Object.entries(all)) {
+                if (info.members.includes(name)) {
+                    showToast(`⚠️ 规划师 "${name}" 已存在`, 1500);
+                    return;
+                }
+            }
+            if (deletedMembers[currentLeaderForAdd]) {
+                deletedMembers[currentLeaderForAdd] = deletedMembers[currentLeaderForAdd].filter(n => n !== name);
+            }
+            if (!dynamicMembers[currentLeaderForAdd]) dynamicMembers[currentLeaderForAdd] = [];
+            dynamicMembers[currentLeaderForAdd].push(name);
+            initTargetsForPlanner(name);
+            closeAddModal();
+            render();
+            showToast(`✅ 已添加 "${name}"`, 1500);
+        };
+
+        // 删除人员模态框
+        let currentLeaderForDelete = null;
+
+        function openDeleteModal(leader) {
+            currentLeaderForDelete = leader;
+            const all = getAllMembers();
+            const members = all[leader] ? all[leader].members : [];
+            const listEl = document.getElementById('deleteMemberList');
+            if (members.length === 0) {
+                listEl.innerHTML = '<li style="color:#94a3b8;">该组暂无成员</li>';
+            } else {
+                listEl.innerHTML = members.map(name =>
+                    `<li>
+                        <span>${name}</span>
+                        <button class="del-btn" onclick="deletePlannerFromModal('${leader}','${name}')">✕</button>
+                    </li>`
+                ).join('');
+            }
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        window.closeDeleteModal = function() {
+            document.getElementById('deleteModal').classList.remove('active');
+            currentLeaderForDelete = null;
+        };
+
+        window.deletePlannerFromModal = function(leader, name) {
+            if (!confirm(`确认删除 "${name}" ？`)) return;
+            if (!deletedMembers[leader]) deletedMembers[leader] = [];
+            if (!deletedMembers[leader].includes(name)) {
+                deletedMembers[leader].push(name);
+            }
+            if (dynamicMembers[leader]) {
+                dynamicMembers[leader] = dynamicMembers[leader].filter(n => n !== name);
+            }
+            delete absentStatus[name];
+            openDeleteModal(leader); // 刷新列表
+            render();
+            showToast(`已删除 "${name}"`);
+        };
+
+        function render() {
+            const allGroups = getAllMembers();
+            const phaseTimeVal = document.getElementById('phaseTime').value || '17:00';
+            const statsTypeVal = document.getElementById('statsType').value;
+
+            // ---- 1. 汇总表 ----
+            let summaryHtml = `
+                <div class="summary-section">
+                    <h3>📊 团队汇总</h3>
+                    <table class="summary-table">
+                        <thead>
+                            <tr>
+                                <th>年级</th>
+                                <th>组长</th>
+                                <th>总通次</th>
+                                <th>总通时 (min)</th>
+                                <th>平均通次</th>
+                                <th>平均通时 (min)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            for (const [leader, info] of Object.entries(allGroups)) {
+                const members = info.members;
+                const grade = info.grade;
+                const activeMembers = members.filter(name => !absentStatus[name]);
+                let totalCount = 0,
+                    totalDur = 0;
+                activeMembers.forEach(name => {
+                    const stats = calcStats(currentRecords, name, statsTypeVal);
+                    totalCount += stats.count;
+                    totalDur += stats.duration;
+                });
+                const avgCount = activeMembers.length > 0 ? (totalCount / activeMembers.length).toFixed(1) : 0;
+                const avgDur = activeMembers.length > 0 ? (totalDur / activeMembers.length).toFixed(1) : 0;
+                summaryHtml += `
+                    <tr>
+                        <td>${grade}</td>
+                        <td><strong>${leader}</strong></td>
+                        <td class="num">${totalCount}</td>
+                        <td class="num">${totalDur}</td>
+                        <td>${avgCount}</td>
+                        <td>${avgDur}</td>
+                    </tr>
+                `;
+            }
+            summaryHtml += `</tbody></table></div>`;
+            summaryEl.innerHTML = summaryHtml;
+
+            // ---- 2. 各组卡片 ----
+            let mainHtml = '';
+            for (const [leader, info] of Object.entries(allGroups)) {
+                const members = info.members;
+                const grade = info.grade;
+                const sorted = [...members].sort((a, b) => {
+                    const aAbsent = absentStatus[a] || false;
+                    const bAbsent = absentStatus[b] || false;
+                    if (aAbsent && !bAbsent) return 1;
+                    if (!aAbsent && bAbsent) return -1;
+                    return 0;
+                });
+
+                mainHtml += `
+                    <div class="group-card">
+                        <div class="group-header">
+                            <h2>
+                                ${grade} · ${leader}
+                                <span class="sub">${members.length} 人 (请假 ${members.filter(n=>absentStatus[n]).length})</span>
+                            </h2>
+                            <div class="group-actions">
+                                <button class="btn btn-sm btn-success" onclick="openAddModal('${leader}')">➕ 添加人员</button>
+                                <button class="btn btn-sm btn-danger" onclick="openDeleteModal('${leader}')">🗑️ 删除人员</button>
+                            </div>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="text-align:left;min-width:70px;">规划师</th>
+                                        <th>目标通次</th>
+                                        <th>目标时长</th>
+                                        <th class="col-phase">${phaseTimeVal}通次标</th>
+                                        <th class="col-phase">${phaseTimeVal}通时标</th>
+                                        <th class="col-supplement">补充通次</th>
+                                        <th class="col-supplement">补充通时</th>
+                                        <th>实际通次</th>
+                                        <th>实际时长</th>
+                                        <th class="col-phase">${phaseTimeVal}通次差</th>
+                                        <th class="col-phase">${phaseTimeVal}通时差</th>
+                                        <th>今日总通次</th>
+                                        <th>今日总时长</th>
+                                        <th>今日通次差</th>
+                                        <th>今日通时差</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+
+                sorted.forEach(name => {
+                    const isAbsent = absentStatus[name] || false;
+                    const stats = calcStats(currentRecords, name, statsTypeVal);
+                    const phaseStats = calcPhaseStats(currentRecords, name, phaseTimeVal, statsTypeVal);
+                    const mainTarget = plannerTargets[name] || { count: DEFAULT_TARGET.count,
+                    duration: DEFAULT_TARGET.duration };
+                    const phaseTarget = plannerPhaseTargets[name] || { count: DEFAULT_PHASE_TARGET.count,
+                        duration: DEFAULT_PHASE_TARGET.duration };
+                    const supp = plannerSupplements[name] || { count: 0, duration: 0 };
+
+                    const actualCount = stats.count;
+                    const actualDur = stats.duration;
+                    // 阶段实际值 = 阶段通话 + 补充数据（全天补充加到阶段上）
+                    const phaseActualCount = phaseStats.count + supp.count;
+                    const phaseActualDur = phaseStats.duration + supp.duration;
+
+                    const totalCount = actualCount + supp.count;
+                    const totalDur = actualDur + supp.duration;
+
+                    const mainCountDiff = totalCount - mainTarget.count;
+                    const mainDurDiff = totalDur - mainTarget.duration;
+                    const phaseCountDiff = phaseActualCount - phaseTarget.count;
+                    const phaseDurDiff = phaseActualDur - phaseTarget.duration;
+
+                    const countDiffClass = mainCountDiff > 0 ? 'diff-pos' : mainCountDiff < 0 ? 'diff-neg' : 'diff-zero';
+                    const durDiffClass = mainDurDiff > 0 ? 'diff-pos' : mainDurDiff < 0 ? 'diff-neg' : 'diff-zero';
+                    const phaseCountDiffClass = phaseCountDiff > 0 ? 'diff-pos' : phaseCountDiff < 0 ? 'diff-neg' : 'diff-zero';
+                    const phaseDurDiffClass = phaseDurDiff > 0 ? 'diff-pos' : phaseDurDiff < 0 ? 'diff-neg' : 'diff-zero';
+
+                    const rowClass = isAbsent ? 'planner-row-absent' : '';
+
+                    mainHtml += `
+                        <tr class="${rowClass}">
+                            <td class="planner-name">
+                                <input class="absent-check" type="checkbox" ${isAbsent ? 'checked' : ''}
+                                       onchange="toggleAbsent('${name}', this)" />
+                                ${name}
+                            </td>
+                            <td>
+                                <input class="target-input" type="number" min="0" step="1"
+                                       value="${mainTarget.count}"
+                                       data-planner="${name}" data-key="count"
+                                       onchange="updateTarget(this, 'main')" ${isAbsent ? 'disabled' : ''} />
+                            </td>
+                            <td>
+                                <input class="target-input" type="number" min="0" step="5"
+                                       value="${mainTarget.duration}"
+                                       data-planner="${name}" data-key="duration"
+                                       onchange="updateTarget(this, 'main')" ${isAbsent ? 'disabled' : ''} />
+                            </td>
+                            <td class="col-phase">
+                                <input class="target-input" type="number" min="0" step="1"
+                                       value="${phaseTarget.count}"
+                                       data-planner="${name}" data-key="count"
+                                       onchange="updateTarget(this, 'phase')" ${isAbsent ? 'disabled' : ''} />
+                            </td>
+                            <td class="col-phase">
+                                <input class="target-input" type="number" min="0" step="5"
+                                       value="${phaseTarget.duration}"
+                                       data-planner="${name}" data-key="duration"
+                                       onchange="updateTarget(this, 'phase')" ${isAbsent ? 'disabled' : ''} />
+                            </td>
+                            <td class="col-supplement">
+                                <input class="target-input" type="number" min="0" step="1"
+                                       value="${supp.count}"
+                                       data-planner="${name}" data-key="count"
+                                       onchange="updateTarget(this, 'supplement')" ${isAbsent ? 'disabled' : ''} />
+                            </td>
+                            <td class="col-supplement">
+                                <input class="target-input" type="number" min="0" step="5"
+                                       value="${supp.duration}"
+                                       data-planner="${name}" data-key="duration"
+                                       onchange="updateTarget(this, 'supplement')" ${isAbsent ? 'disabled' : ''} />
+                            </td>
+                            <td class="stat-num ${statsTypeVal === 'valid' ? 'valid' : 'total'}">${isAbsent ? '-' : actualCount}</td>
+                            <td>${isAbsent ? '-' : actualDur}</td>
+                            <td class="col-phase diff ${phaseCountDiffClass}">${isAbsent ? '-' : (phaseCountDiff > 0 ? '+' : '') + phaseCountDiff}</td>
+                            <td class="col-phase diff ${phaseDurDiffClass}">${isAbsent ? '-' : (phaseDurDiff > 0 ? '+' : '') + phaseDurDiff}</td>
+                            <td>${isAbsent ? '-' : totalCount}</td>
+                            <td>${isAbsent ? '-' : totalDur}</td>
+                            <td class="diff ${countDiffClass}">${isAbsent ? '-' : (mainCountDiff > 0 ? '+' : '') + mainCountDiff}</td>
+                            <td class="diff ${durDiffClass}">${isAbsent ? '-' : (mainDurDiff > 0 ? '+' : '') + mainDurDiff}</td>
+                        </tr>
+                    `;
+                });
+
+                mainHtml += `</tbody></table></div></div>`;
+            }
+
+            mainEl.innerHTML = mainHtml;
+            updateDataStatus();
+        }
+
+        // ================================================================
+        //  5. 事件绑定 & 初始化
+        // ================================================================
+        document.getElementById('statsType').addEventListener('change', function() {
+            statsType = this.value;
+            render();
+        });
+
+        document.getElementById('phaseTime').addEventListener('change', function() {
+            phaseTime = this.value;
+            render();
+        });
+
+        // 文件上传
+        const fileInput = document.getElementById('fileInput');
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(loadEvent) {
+                try {
+                    const data = new Uint8Array(loadEvent.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    let json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+                    // 删除第一行数据（用户要求删除数据表的第一行内容）
+                    if (json.length > 0) {
+                        json.shift(); // 移除第一行
+                    }
+
+                    const records = [];
+                    json.forEach(row => {
+                        const planner = String(row['规划师'] || '').trim();
+                        const durationStr = String(row['用户实际接听时长'] || '').trim();
+                        const callTime = String(row['外呼日期'] || '').trim();
+                        const status = String(row['通话状态'] || '').trim();
+                        if (!planner || !durationStr || status !== '已接通') return;
+                        const match = durationStr.match(/(\d+)min(\d+)s/);
+                        if (!match) return;
+                        const mins = parseInt(match[1]) || 0;
+                        const secs = parseInt(match[2]) || 0;
+                        const totalSec = mins * 60 + secs;
+                        if (totalSec === 0) return;
+                        let timePart = '00:00:00';
+                        if (callTime) {
+                            const parts = callTime.split(' ');
+                            if (parts.length >= 2) timePart = parts[1];
+                            else timePart = callTime;
+                        }
+                        const tParts = timePart.split(':');
+                        if (tParts.length === 2) timePart = tParts[0] + ':' + tParts[1] + ':00';
+                        else if (tParts.length === 3) timePart = tParts[0] + ':' + tParts[1] + ':' + tParts[2];
+                        else timePart = '00:00:00';
+                        records.push([planner, totalSec, timePart]);
+                    });
+
+                    if (records.length === 0) {
+                        showToast('⚠️ 未解析到有效数据，请检查列名', 3000);
+                        return;
+                    }
+
+                    currentRecords = records;
+                    // 重新初始化目标（现有人员目标保留，新增的自动初始化）
+                    initAllTargets();
+                    render();
+                    showToast(`✅ 成功导入 ${records.length} 条通话记录`, 2000);
+                    fileInput.value = '';
+                } catch (err) {
+                    showToast('❌ 解析失败: ' + err.message, 3000);
+                    console.error(err);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // 重置示例（清空数据，所有实际值归零）
+        document.getElementById('resetDataBtn').addEventListener('click', function() {
+            currentRecords = [];
+            dynamicMembers = {};
+            deletedMembers = {};
+            absentStatus = {};
+            // 重置目标为默认
+            plannerTargets = {};
+            plannerPhaseTargets = {};
+            plannerSupplements = {};
+            initAllTargets();
+            render();
+            showToast('↺ 已重置，所有数据归零', 1500);
+            fileInput.value = '';
+        });
+
+        // 初始化
+        initAllTargets();
+        render();
+
+        console.log('📞 新版团队仪表板已加载 (默认数据为0, 阶段差受补充影响)');
+    </script>
+
+</body>
+</html>
